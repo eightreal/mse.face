@@ -1,2 +1,4 @@
-./data
-./output
+data/*
+data/person/*
+output/*
+.idea/*
