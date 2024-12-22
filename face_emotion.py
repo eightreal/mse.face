@@ -1,12 +1,16 @@
 
 from PIL import Image
+from typing import Tuple
+
 
 class Emotion:
-    def __init__(self, model_path):
-        pass 
-    
-    def add_person_img(self, image:Image ):
+    def __init__(self, model_name):
         pass
-    
-    def recoganition(self , group_image:Image):
+
+    def get_emotion(self, image: Image) :
+        """Return image sentiment and score
+
+        Args:
+            image (Image): Input picture
+        """
         pass

@@ -35,10 +35,11 @@ MODEL_PATH = f"{ROOT}/model"
 
 DETECTION_MODEL_LIST = [
     "yolov11n-face.pt",
+    "gaosheng/face_detect"
 ]
 
 RECOGNITION_MODEL_LIST =[]
 
 EMOTION_MODEL_LIST =[]
-
+MATTING_MODEL_LIST=[]
 
