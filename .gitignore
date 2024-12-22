@@ -2,3 +2,4 @@ data/*
 data/person/*
 output/*
 .idea/*
+__pycache__
