@@ -4,7 +4,7 @@ from typing import Tuple
 
 
 class Emotion:
-    def __init__(self, model_name):
+    def __init__(self):
         pass
 
     def get_emotion(self, image: Image) :
