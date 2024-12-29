@@ -3,3 +3,4 @@ data/person/*
 output/*
 .idea/*
 __pycache__
+bak/*
