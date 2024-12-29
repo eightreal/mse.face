@@ -7,10 +7,10 @@ import torch.nn.functional as F
 from PIL import Image
 from typing import Dict, List
 from loguru import logger
-from face_location import Location
-from face_emotion import Emotion
-from face_recognition import Recognition
-from face_matting import Matting
+from face_package.face_location import Location
+from face_package.face_emotion import Emotion
+from face_package.face_recognition import Recognition
+from face_package.face_matting import Matting
 
 
 class Face:
@@ -80,21 +80,4 @@ class Face:
         logger.info(f"get name for {len(self.info)} person")
         # print(unknow_xywhs)
 
-    def get_expanded_sub_image(self, x, y, w, h, expansion_factor=1.2):
-        # 计算扩充后的宽度和高度
-        new_w = int(w * expansion_factor)
-        new_h = int(h * expansion_factor)
-        # 计算原始区域中心
-        center_x = x + w // 2
-        center_y = y + h // 2
-        # 计算新的左上角坐标
-        new_x = center_x - new_w // 2
-        new_y = center_y - new_h // 2
-        # 确保新的坐标在图像范围内
-        new_x = max(0, new_x)
-        new_y = max(0, new_y)
-        new_x = min(new_x, self.origin_image.width - new_w)
-        new_y = min(new_y, self.origin_image.height - new_h)
-        box = (new_x, new_y, new_x + new_w, new_y + new_h)
-        sub_image = self.origin_image.crop(box)
-        return sub_image
+

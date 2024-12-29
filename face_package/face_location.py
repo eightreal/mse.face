@@ -6,14 +6,16 @@ from loguru import logger
 from typing import List
 from ultralytics.engine.model import Results
 
+from face_package import DATA_DIR, MODEL_DIR
+
 
 class Location:
     def __init__(self):
-        # self.model_path = model_path
-        # self.person_photo_path = person_photo_path
-        model_path = "model/yolov11n-face.pt"
+        
+        model_path = f"{MODEL_DIR}/yolov11n-face.pt"
+        logger.info(f"model path is f{model_path}")
         self.yolo = YOLO(model_path)
-        # self.yolo.load(self.model_path)
+
         if torch.cuda.is_available():
             self.yolo.cuda()
             logger.info("Loaded model, cuda is available")
@@ -31,4 +33,3 @@ class Location:
         result: List[Results] = self.yolo(group_person_photo)
         logger.info(result)
         return result[0].boxes.xywh.cpu().numpy()
-

@@ -11,10 +11,10 @@ from streamlit.runtime.uploaded_file_manager import UploadedFile
 from typing import List,Dict
 
 import config
-from face_location import Location
-from face_recognition import  Recognition
-from face_emotion import Emotion
-from face_matting import Matting
+from face_package.face_location import Location
+from face_package.face_recognition import  Recognition
+from face_package.face_emotion import Emotion
+from face_package.face_matting import Matting
 from face import Face
 
 location_model = Location()
