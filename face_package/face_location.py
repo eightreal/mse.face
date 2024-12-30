@@ -1,35 +1,40 @@
+import pandas as pd
+from sklearn.cluster import DBSCAN, KMeans
 import numpy as np
-import torch
-from PIL import Image
-from ultralytics import YOLO
-from loguru import logger
-from typing import List
-from ultralytics.engine.model import Results
-
-from face_package import DATA_DIR, MODEL_DIR
 
 
 class Location:
-    def __init__(self):
+    def __init__(self,  xys:np.ndarray):
         
-        model_path = f"{MODEL_DIR}/yolov11n-face.pt"
-        logger.info(f"model path is f{model_path}")
-        self.yolo = YOLO(model_path)
+        self.model = KMeans(n_clusters=5)
 
-        if torch.cuda.is_available():
-            self.yolo.cuda()
-            logger.info("Loaded model, cuda is available")
-        self.yolo.eval()
+        labels = self.model.fit_predict(xys)
 
-    def detect(self, group_person_photo: Image) -> np.ndarray:
-        """Get the specific subcoordinates of face and return the content as [x, y, width, height]
+        # 获取核心样本的索引
+        core_samples_mask = np.zeros_like(self.model.labels_, dtype=bool)
+        core_samples_mask[self.model.core_sample_indices_] = True
 
-        Args:
-            group_person_photo (str): Address of the photo file
+        # 获取每个聚类的核心样本
+        core_samples = xys[core_samples_mask]
+        core_labels = labels[core_samples_mask]
 
-        Returns:
-            np.ndarray: Return the position of each face, which are [x, y, width, height].
-        """
-        result: List[Results] = self.yolo(group_person_photo)
-        logger.info(result)
-        return result[0].boxes.xywh.cpu().numpy()
+        # 计算每个聚类的中心值
+        cluster_centers = []
+        for cluster_id in np.unique(core_labels):
+            if cluster_id!= -1:
+                cluster_center = np.mean(core_samples[core_labels == cluster_id], axis=0)
+                cluster_centers.append((cluster_id, cluster_center))
+
+        # 根据中心值的某个维度（这里假设第一个维度）从大到小排序
+        cluster_centers.sort(key=lambda x: x[1][0], reverse=True)
+
+        # 重新分配clusterid
+        new_cluster_ids = {old_id: new_id for new_id, (old_id, _) in enumerate(cluster_centers)}
+        new_labels = np.array([new_cluster_ids[label] if label!= -1 else -1 for label in labels])
+
+        # 将结果整理成DataFrame
+        data = pd.DataFrame(xys, columns=['feature1'])
+        data['original_cluster'] = labels
+        data['new_cluster'] = new_labels
+
+        self.data = data

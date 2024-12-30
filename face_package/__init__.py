@@ -1,5 +1,7 @@
 import sys
 import os
+
+import numpy as np
 from PIL import Image
 from numpy import ndarray
 
@@ -31,3 +33,14 @@ def get_expanded_sub_image(image: Image.Image, xywh: ndarray, expansion_factor: 
     # 计算原始区域中心
 
     return crop_image_from_xywh(image, xywh)
+
+
+def xywh2str(xywh: ndarray) -> str:
+    x, y, w, h = xywh
+    return "_".join([str(x), str(y), str(w), str(h)])
+
+
+def str2xywh(str: str) -> ndarray:
+    str_list = str.split("_")
+    xywh = [float(item) for item in str_list]
+    return np.array(xywh)
