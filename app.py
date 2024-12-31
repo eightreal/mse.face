@@ -87,8 +87,8 @@ def search_func(name):
     col2.write(f"姓名 {name}")
     col2.write(f"情绪分数： {emotion_score}")
     col2.write(f"情绪： {emotion}")
-    col2.write(f"行： {info["row"]}")
-    col2.write(f"列：{info["col"]}")
+    col2.write(f"行： {info['row']}")
+    col2.write(f"列：{info['col']}")
     st.image(group_img)
 
 
