@@ -20,12 +20,7 @@ from face import Face
 
 
 if "face_handle" not in st.session_state:
-    detect_model = Detect()
-    recognition_model = Recognition()
-    emotion_model = Emotion()
-    matting_model = Matting()
-    face_handle = Face(detect_model, emotion_model,
-                       recognition_model, matting_model)
+    face_handle = Face()
     st.session_state["face_handle"] = face_handle
 
 if "person_images" not in st.session_state:
@@ -62,11 +57,15 @@ def analyzer():
     face_handle.add_person_img()
     origin_col, face_col = container.columns(2)
 
+    face_handle.add_group_img( st.session_state["group_images_content"])
+    face_handle.add_person_img( st.session_state["person_images"])
+    face_handle.analysis()
+
     with origin_col:
         origin_col.image(
-            st.session_state["person_images_content"], caption='上传并读取的图像')
+            face_handle.origin_image, caption='上传并读取的图像')
     with face_col:
-        face_col.image(st.session_state["person_images_content"])
+        face_col.image(face_handle.detect_image)
 
 
 # sidebar
@@ -86,9 +85,9 @@ with st.sidebar as side:
             "开始分析", disabled=should_disable_analyzer())
         if submitted:
             logger.info(group_img_file)
-            st.session_state["person_images_content"] = Image.open(
+            st.session_state["group_images_content"] = Image.open(
                 group_img_file)
-            st.session_state["person_images"] = []
+            st.session_state["person_images"] = {}
             for person_img_file in person_image_files:
                 name_without_extension = os.path.splitext(person_img_file.name)[0]
                 
