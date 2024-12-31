@@ -10,6 +10,7 @@ _current_dir = os.path.dirname(__file__)
 
 DATA_DIR = _current_dir + "/../data"
 MODEL_DIR = _current_dir + "/../model"
+FONT_PATH = _current_dir = "/../data/STHUPO.TTF"
 
 
 def crop_image_from_xywh(image: Image.Image, xywhs: ndarray) -> Image.Image:
@@ -28,6 +29,7 @@ def crop_image_from_xywh(image: Image.Image, xywhs: ndarray) -> Image.Image:
 
 def get_expanded_sub_image(image: Image.Image, xywh: ndarray, expansion_factor: float = 1.2):
     # 计算扩充后的宽度和高度
+    xywh = xywh.copy()
     xywh[2] = xywh[2] * expansion_factor
     xywh[3] = xywh[3] * expansion_factor
     # 计算原始区域中心

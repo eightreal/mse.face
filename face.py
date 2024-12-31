@@ -1,16 +1,17 @@
 """Process processing class
 """
 
+import PIL
 import numpy as np
 
 import torch.nn.functional as F
 import torch
-from PIL import Image,ImageDraw
+from PIL import Image, ImageDraw
 from typing import Dict, List, Tuple
 from loguru import logger
 
 
-from face_package import crop_image_from_xywh, get_expanded_sub_image, xywh2str, str2xywh
+from face_package import crop_image_from_xywh, get_expanded_sub_image, xywh2str, str2xywh, FONT_PATH
 from face_package.face_detect import Detect
 from face_package.face_emotion import Emotion
 from face_package.face_recognition import Recognition
@@ -35,7 +36,8 @@ class Face:
         self.group_person_decodes: Dict[str, np.ndarray] = {}
         self.person_img_info: Dict = {}
         self.info = {}
-        self.detect_image:Image.Image = None
+        self.detect_image: Image.Image = None
+        self.rows = []
 
     def add_group_img(self, group_image: Image.Image):
         self.origin_image = group_image
@@ -51,6 +53,7 @@ class Face:
         logger.info(f"detect {len(self.group_person_xywhs)} persons")
 
     def add_person_img(self, person_images: dict[str, Image.Image]):
+        self.person_img_info = {}
         for item in person_images:
             name = item
             person_image = person_images[name]
@@ -62,65 +65,69 @@ class Face:
 
     def analysis(self):
 
-        group_candidate_dict = self.group_person_decodes
+        group_candidate_dict = self.group_person_decodes.copy()
 
         person_candidate_dict = self.person_img_info.copy()
-        unknow_group_face_dict = group_candidate_dict.copy()
+
         logger.info(f"person_candidate_dict is {len(person_candidate_dict)}")
-        logger.info(f"unknow_group_face_dict is {len(unknow_group_face_dict)}")
-       
-        # recognization process 
+
+        # recognization process
         conf = 0.8
         while len(person_candidate_dict) > 0 and len(group_candidate_dict) > 0:
-            temp_unknow_group_face = {}
-            for xywh, group_face_coder in unknow_group_face_dict.items():
-
+            best_score = 0.0
+            best_name = "unknow"
+            best_xywh = None
+            
+            for xywh, group_face_coder in group_candidate_dict.items():
                 name, score = query_data(
                     group_face_coder, person_candidate_dict)
                 logger.info(f"score  {score}, conf is {conf}")
-                if score > conf:
+                if score > best_score:
                     logger.info(f"best score name is {name}")
-                    self.info[name] = {
-                        "xywh": str2xywh(xywh),
-                        "score": score
+                    best_score=score
+                    best_name = name
+                    best_xywh = xywh
+                    
+                    
+            self.info[best_name] = {
+                        "xywh": str2xywh(best_xywh),
+                        "score": best_score
                     }
-                    del person_candidate_dict[name]
-                    del group_candidate_dict[xywh]
-                    
-                else:
-                    temp_unknow_group_face[xywh]= group_face_coder
-                    
-                logger.info(f"person_candidate_dict is {len(person_candidate_dict)}")
-                logger.info(f"group_candidate_dict is {len(group_candidate_dict)}")    
-                logger.info(f"temp_unknow_group_face is {len(temp_unknow_group_face)}")   
-                
-            unknow_group_face_dict = temp_unknow_group_face.copy()
-            conf = conf * conf
+            logger.info(f"识别成功 {best_name}, {best_score}")
             
-        self.info =  self.location_model(self.info)
+            del person_candidate_dict[best_name]
+            del group_candidate_dict[best_xywh]
+        
+
+        self.info, self.rows = self.location_model(self.info)
         # emotion process
-        for name,_ in self.info.items():
+        for name, _ in self.info.items():
             xywh = self.info[name]["xywh"]
-            group_face_image = get_expanded_sub_image(self.origin_image, xywh, expansion_factor=2)
-            
-            emotion, score = self.emotion_model.get_emotion(group_face_image)
+            group_face_image = get_expanded_sub_image(
+                self.origin_image, xywh, expansion_factor=2)
+
             self.info[name]["origin_face"] = group_face_image
-            self.info[name]["emotion"] = emotion
-            self.info[name]["emotion_score"] = score
-            
-            matting_face = self.matting_model.matting(group_face_image)
-            
-            self.info[name]["matting_face"] = matting_face
-            
+            self.info[name]["emotion"] = "emotion"
+            self.info[name]["emotion_score"] = 0.0
+            self.info[name]["matting_face"] = group_face_image
+
+            # emotion, score = self.emotion_model.get_emotion(group_face_image)
+            # self.info[name]["origin_face"] = group_face_image
+            # self.info[name]["emotion"] = emotion
+            # self.info[name]["emotion_score"] = score
+            # matting_face:Image.Image = self.matting_model.matting(group_face_image)
+
+            # self.info[name]["matting_face"] = matting_face
+
         self.detect_image = self.origin_image.copy()
-        
-        # draw detect face for origin face 
-        
+
+        # draw detect face for origin face
+
         draw = ImageDraw.Draw(self.detect_image)
 
         for item in self.info:
             xywh = self.info[item]["xywh"]
-            
+
             x, y, w, h = xywh
 
             x1 = int(x - (w/2))
@@ -128,8 +135,13 @@ class Face:
             x2 = int(x + (w/2))
             y2 = int(y + (h/2))
         # 绘制矩形
-            draw.rectangle([(x1, y1), (x2, y2)], outline='red', width = 10)
-        
+            font = PIL.ImageFont.truetype(
+                # 或者 encoding = "unic" ,encoding="gbk"
+                font=f"{FONT_PATH}", size=80, encoding="utf-8")
+
+            draw.rectangle([(x1, y1), (x2, y2)], outline='red', width=10)
+            draw.text((x1, y1-80), item, font=font, fill=(0, 0, 255))
+
 
 def query_data(decoder: np.ndarray, candidate: Dict[str, np.ndarray]):
     decoder = decoder.reshape([-1])
@@ -149,3 +161,16 @@ def query_data(decoder: np.ndarray, candidate: Dict[str, np.ndarray]):
             best_name = name
 
     return best_name, score
+
+
+def draw_detect(xywh, group_img: Image.Image):
+    draw_img = group_img.copy()
+    x, y, w, h = xywh
+    x1 = int(x - (w/2))
+    y1 = int(y - (h/2))
+    x2 = int(x + (w/2))
+    y2 = int(y + (h/2))
+# 绘制矩形
+    draw = ImageDraw.Draw(draw_img)
+    draw.rectangle([(x1, y1), (x2, y2)], outline='red', width=20)
+    return draw_img
