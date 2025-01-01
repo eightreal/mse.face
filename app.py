@@ -1,5 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import sys
+import os
+
+# 获取当前文件所在的目录
+current_dir = os.path.dirname(os.path.abspath(''))
+# 将当前目录添加到 sys.path 中
+sys.path.append(current_dir)
 
 import os
 from pathlib import Path
@@ -11,7 +18,6 @@ import cv2
 from streamlit.runtime.uploaded_file_manager import UploadedFile
 from typing import List, Dict
 
-import config
 from face_package.face_detect import Detect
 from face_package.face_recognition import Recognition
 from face_package.face_emotion import Emotion
@@ -71,8 +77,7 @@ if st.session_state.analysised:
 def search_func(name):
     st.write(f"{name} 的详细信息")
     face_handle: Face = st.session_state["face_handle"]
-    logger.info(face_handle.info
-                )
+    logger.info(face_handle.info)
     info = face_handle.info[name]
     xywh = info["xywh"]
     group_img = draw_detect(xywh, group_img=face_handle.origin_image)
