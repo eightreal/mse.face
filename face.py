@@ -145,13 +145,14 @@ class Face:
             self.info[name]["emotion_score"] = 0.0
             self.info[name]["matting_face"] = group_face_image
 
-            # emotion, score = self.emotion_model.get_emotion(group_face_image)
-            # self.info[name]["origin_face"] = group_face_image
-            # self.info[name]["emotion"] = emotion
-            # self.info[name]["emotion_score"] = score
-            # matting_face:Image.Image = self.matting_model.matting(group_face_image)
-
-            # self.info[name]["matting_face"] = matting_face
+            emotion, score = self.emotion_model.get_emotion(group_face_image)
+            self.info[name]["origin_face"] = group_face_image
+            self.info[name]["emotion"] = emotion
+            self.info[name]["emotion_score"] = score
+            
+            matting_face:Image.Image = self.matting_model.matting(group_face_image)
+            self.info[name]["matting_face"] = matting_face
+            
         # 复制原始图像，用于绘制检测结果
         self.detect_image = self.origin_image.copy()
 
